@@ -1,0 +1,17 @@
+name: Deploy App
+
+on:
+  push:
+    branches:
+      - main  # or 'master' depending on your default branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger remote server to pull latest code
+        run: curl -X POST ${{ secrets.WEBHOOK_URL }}
