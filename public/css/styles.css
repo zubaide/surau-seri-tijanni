@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for masjid display */
+.font-digital {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.1em;
+}
+
+.bg-masjid-gold {
+  background-color: #FFD700;
+}
+
+/* Smooth transitions */
+.prayer-time-highlight {
+  transition: all 0.3s ease;
+}
+
+/* Marquee styling */
+marquee {
+  animation: scroll-left 30s linear infinite;
+}
+
+/* Custom scrolling animation */
+@keyframes scroll-left {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Admin panel styles */
+.admin-message {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

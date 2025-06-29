@@ -1,0 +1,27 @@
+{
+  "header": {
+    "channelName": "Surau Seri Tijanni",
+    "addressLine1": "Ahlam wa sahlan",
+    "addressLine2": "Jom Solat Berjemaah di Surau",
+    "headerBgColor": "#8b0000",
+    "headerTextColor": "#ffd700",
+    "logoText": "ST"
+  },
+  "background": {
+    "type": "image",
+    "color": "#4682b4",
+    "gradientColor1": "#87ceeb",
+    "gradientColor2": "#4682b4",
+    "imageUrl": "/uploads/1751082789907-cliff.jpg"
+  },
+  "slideshow": {
+    "enabled": true,
+    "duration": 5,
+    "imageUrls": [
+      "/uploads/1751082803443-clouds.jpg",
+      "/uploads/1751082815257-fjord.jpg",
+      "/uploads/1751082815371-cliff.jpg",
+      "/uploads/1751082815489-balloon.jpg"
+    ]
+  }
+}

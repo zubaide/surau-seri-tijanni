@@ -1,0 +1,291 @@
+const express = require('express');
+const path = require('path');
+const fs = require('fs').promises;
+const axios = require('axios');
+const cron = require('node-cron');
+const moment = require('moment');
+const multer = require('multer');
+
+// Create the Express app
+const app = express();
+const PORT = 3000;
+const DATA_PATH = path.join(__dirname, '../data');
+const UPLOADS_PATH = path.join(__dirname, '../public/uploads');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOADS_PATH);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const upload = multer({ storage });
+
+// Middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '../public')));
+app.use('/admin', express.static(path.join(__dirname, '../admin')));
+
+// Create data files if missing
+const initDataFiles = async () => {
+  const files = {
+    'prayer-times.json': JSON.stringify({
+      imsak: "05:36",
+      subuh: "05:46",
+      syuruk: "06:57",
+      zohor: "13:10",
+      asar: "16:29",
+      maghrib: "19:20",
+      isyak: "20:28"
+    }),
+    'announcements.json': '{"announcements": []}',
+    'settings.json': '{"zone": "WLY01", "iqamahDelay": 15}',
+    'display-settings.json': JSON.stringify({
+      header: {
+        channelName: "TV JAM SOLAT",
+        addressLine1: "No 9, 1411, Kompleks Perniagaan Utama Alor 31",
+        addressLine2: "01254111355 TV.SOLAT.COM",
+        headerBgColor: "#8B0000",
+        headerTextColor: "#FFD700",
+        logoText: "TV"
+      },
+      background: {
+        type: "mosque",
+        color: "#4682B4",
+        gradientColor1: "#87CEEB",
+        gradientColor2: "#4682B4",
+        imageUrl: ""
+      },
+      slideshow: {
+        enabled: false,
+        duration: 5,
+        imageUrls: []
+      }
+    })
+  };
+
+  // Create directories if they don't exist
+  try {
+    await fs.access(DATA_PATH);
+  } catch {
+    await fs.mkdir(DATA_PATH, { recursive: true });
+  }
+  
+  try {
+    await fs.access(UPLOADS_PATH);
+  } catch {
+    await fs.mkdir(UPLOADS_PATH, { recursive: true });
+  }
+
+  for (const [file, content] of Object.entries(files)) {
+    try {
+      await fs.access(`${DATA_PATH}/${file}`);
+    } catch {
+      await fs.writeFile(`${DATA_PATH}/${file}`, content);
+    }
+  }
+};
+
+// Helper function to get current prayer times
+const updatePrayerTimes = async () => {
+  try {
+    const settings = JSON.parse(await fs.readFile(`${DATA_PATH}/settings.json`, 'utf8'));
+    console.log(`Fetching prayer times for zone: ${settings.zone}`);
+
+    // Using the recommended API endpoint
+    const response = await axios.get(`https://api.waktusolat.app/v2/solat/${settings.zone}`);
+
+    console.log('API Response:', response.data);
+
+    // Handle the API response format
+    let prayerTimes;
+
+    if (response.data.response && response.data.response.times) {
+      // Handle old API format with UNIX timestamps
+      const todayTimes = response.data.response.times[0]; // Get today's times
+      const date = new Date();
+
+      prayerTimes = {
+        imsak: moment.unix(todayTimes[0]).format('HH:mm'),
+        subuh: moment.unix(todayTimes[1]).format('HH:mm'),
+        syuruk: moment.unix(todayTimes[2]).format('HH:mm'),
+        zohor: moment.unix(todayTimes[3]).format('HH:mm'),
+        asar: moment.unix(todayTimes[4]).format('HH:mm'),
+        maghrib: moment.unix(todayTimes[5]).format('HH:mm'),
+        isyak: moment.unix(todayTimes[6]).format('HH:mm')
+      };
+    } else if (response.data.data) {
+      // Handle newer API format
+      const data = response.data.data;
+      prayerTimes = {
+        imsak: data.imsak || "05:36",
+        subuh: data.fajr || data.subuh || "05:46",
+        syuruk: data.sunrise || data.syuruk || "06:57",
+        zohor: data.dhuhr || data.zohor || "13:10",
+        asar: data.asr || data.asar || "16:29",
+        maghrib: data.maghrib || "19:20",
+        isyak: data.isha || data.isyak || "20:28"
+      };
+    } else {
+      // Fallback - use direct response if it has the prayer names
+      prayerTimes = {
+        imsak: response.data.imsak || "05:36",
+        subuh: response.data.fajr || response.data.subuh || "05:46",
+        syuruk: response.data.sunrise || response.data.syuruk || "06:57",
+        zohor: response.data.dhuhr || response.data.zohor || "13:10",
+        asar: response.data.asr || response.data.asar || "16:29",
+        maghrib: response.data.maghrib || "19:20",
+        isyak: response.data.isha || response.data.isyak || "20:28"
+      };
+    }
+
+    await fs.writeFile(`${DATA_PATH}/prayer-times.json`, JSON.stringify(prayerTimes, null, 2));
+    console.log('Prayer times updated successfully:', prayerTimes);
+
+    return prayerTimes;
+  } catch (error) {
+    console.error('Prayer time update error:', error.message);
+    console.error('Error details:', error.response?.data || error);
+
+    // Return default times if API fails
+    return {
+      imsak: "05:36",
+      subuh: "05:46",
+      syuruk: "06:57",
+      zohor: "13:10",
+      asar: "16:29",
+      maghrib: "19:20",
+      isyak: "20:28"
+    };
+  }
+};
+
+// API Endpoints
+app.get('/api/prayer-times', async (req, res) => {
+  try {
+    const data = await fs.readFile(`${DATA_PATH}/prayer-times.json`, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    console.error('Error loading prayer times:', error);
+    res.status(500).send('Error loading prayer times');
+  }
+});
+
+app.get('/api/announcements', async (req, res) => {
+  try {
+    const data = await fs.readFile(`${DATA_PATH}/announcements.json`, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    res.status(500).send('Error loading announcements');
+  }
+});
+
+// POST: Update announcements
+app.post('/api/announcements', async (req, res) => {
+  try {
+    await fs.writeFile(`${DATA_PATH}/announcements.json`,
+      JSON.stringify({ announcements: req.body.announcements }, null, 2));
+    res.status(200).send('Announcements updated');
+  } catch (error) {
+    res.status(500).send('Error updating announcements');
+  }
+});
+
+// GET: Settings
+app.get('/api/settings', async (req, res) => {
+  try {
+    const data = await fs.readFile(`${DATA_PATH}/settings.json`, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    res.status(500).send('Error loading settings');
+  }
+});
+
+// POST: Update settings
+app.post('/api/settings', async (req, res) => {
+  try {
+    const newSettings = { ...req.body, iqamahDelay: req.body.iqamahDelay || 15 };
+    await fs.writeFile(`${DATA_PATH}/settings.json`,
+      JSON.stringify(newSettings, null, 2));
+
+    // Update prayer times immediately when zone changes
+    await updatePrayerTimes();
+
+    res.status(200).send('Settings updated');
+  } catch (error) {
+    res.status(500).send('Error updating settings');
+  }
+});
+
+// Display settings endpoints
+app.get('/api/display-settings', async (req, res) => {
+  try {
+    const data = await fs.readFile(`${DATA_PATH}/display-settings.json`, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    console.error('Error loading display settings:', error);
+    res.status(500).send('Error loading display settings');
+  }
+});
+
+app.post('/api/display-settings', async (req, res) => {
+  try {
+    await fs.writeFile(`${DATA_PATH}/display-settings.json`,
+      JSON.stringify(req.body, null, 2));
+    res.status(200).send('Display settings updated');
+  } catch (error) {
+    console.error('Error updating display settings:', error);
+    res.status(500).send('Error updating display settings');
+  }
+});
+
+// Image upload endpoint
+app.post('/api/upload', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send('No file uploaded');
+    }
+    
+    const imageUrl = `/uploads/${req.file.filename}`;
+    res.json({ success: true, imageUrl });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).send('Error uploading file');
+  }
+});
+
+// Manual update endpoint for testing
+app.post('/api/update-prayer-times', async (req, res) => {
+  try {
+    const prayerTimes = await updatePrayerTimes();
+    res.json({ message: 'Prayer times updated', data: prayerTimes });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update prayer times' });
+  }
+});
+
+// Update prayer times daily at 12:01 AM
+cron.schedule('1 0 * * *', async () => {
+  console.log('Running scheduled prayer time update...');
+  await updatePrayerTimes();
+});
+
+// Update prayer times on server start
+const initializeServer = async () => {
+  await initDataFiles();
+
+  // Update prayer times on startup
+  console.log('Updating prayer times on server start...');
+  await updatePrayerTimes();
+
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log('Prayer times updated on startup');
+  });
+};
+
+// Initialize and start server
+initializeServer().catch(console.error);

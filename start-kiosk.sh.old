@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Build CSS
+npx tailwindcss -i public/css/styles.css -o public/css/output.css
+
+# Start server
+node server/server.js &
+
+# Wait for server to start
+echo "Waiting for server to start..."
+sleep 10
+
+# Start browser in kiosk mode with software rendering
+export LIBGL_ALWAYS_SOFTWARE=1
+export GALLIUM_DRIVER=llvmpipe
+chromium-browser --kiosk --noerrdialogs --disable-infobars \
+  --start-fullscreen --app=http://localhost:3000 \
+  --no-first-run --fast --fast-start

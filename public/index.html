@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV JAM SOLAT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Header Section */
+        .header {
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 3px solid #FF4500;
+            position: relative;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg, #FF4500, #FF6347, #FF4500);
+            z-index: -1;
+            border-radius: 3px;
+        }
+        .date-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .date-gregorian {
+            font-size: 14px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        .date-hijri {
+            font-size: 12px;
+            color: #FFF8DC;
+        }
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: #FFD700;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #8B0000;
+            font-size: 18px;
+        }
+        .channel-info {
+            text-align: center;
+        }
+        .channel-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        .channel-details {
+            font-size: 10px;
+            color: #FFF8DC;
+        }
+        .time-section {
+            text-align: right;
+        }
+        .current-time {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        .am-pm {
+            font-size: 12px;
+            color: #FFF8DC;
+        }
+        /* Center Section - Mosque */
+        .center-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .mosque-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .mosque {
+            width: 400px;
+            height: 300px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><linearGradient id="mosqueGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:%23E6E6FA"/><stop offset="100%" style="stop-color:%23D8BFD8"/></linearGradient></defs><rect x="50" y="150" width="300" height="120" fill="url(%23mosqueGrad)" stroke="%23663399" stroke-width="2"/><circle cx="200" cy="100" r="60" fill="%23663399"/><rect x="180" y="40" width="40" height="80" fill="%23663399"/><circle cx="200" cy="30" r="15" fill="%23FFD700"/><rect x="80" y="120" width="20" height="30" fill="%23663399"/><rect x="120" y="120" width="20" height="30" fill="%23663399"/><rect x="160" y="120" width="20" height="30" fill="%23663399"/><rect x="220" y="120" width="20" height="30" fill="%23663399"/><rect x="260" y="120" width="20" height="30" fill="%23663399"/><rect x="300" y="120" width="20" height="30" fill="%23663399"/></svg>') center/contain no-repeat;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+        .water-reflection {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            border-radius: 50px;
+        }
+        /* Slideshow */
+        .slideshow-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .slideshow-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        .slideshow-image.active {
+            opacity: 1;
+        }
+        /* Footer Section */
+        .footer {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border: 3px solid #00FF00;
+        }
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg, #00FF00, #32CD32, #00FF00);
+            z-index: -1;
+            border-radius: 3px;
+        }
+        .scrolling-text {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+        .scroll-content {
+            display: inline-block;
+            animation: scroll 15s linear infinite;
+            font-size: 16px;
+            font-weight: bold;
+            color: #FFFF00;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        @keyframes scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .prayer-times {
+            display: flex;
+            justify-content: center;
+            background: rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        .prayer-time {
+            padding: 10px 15px;
+            text-align: center;
+            border-right: 1px solid rgba(255,255,255,0.3);
+            flex: 1;
+            min-width: 0;
+        }
+        .prayer-time:last-child {
+            border-right: none;
+        }
+        .prayer-time:nth-child(1) { background: #4B0082; } /* Imsak */
+        .prayer-time:nth-child(2) { background: #6A5ACD; } /* Subuh */
+        .prayer-time:nth-child(3) { background: #228B22; } /* Syuruk */
+        .prayer-time:nth-child(4) { background: #006400; } /* Zohor */
+        .prayer-time:nth-child(5) { background: #90EE90; } /* Asar */
+        .prayer-time:nth-child(6) { background: #FFA500; } /* Maghrib */
+        .prayer-time:nth-child(7) { background: #800080; } /* Isyak */
+        .prayer-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #FFFF00;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .prayer-time-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFF;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        /* Connection status indicator */
+        .status-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00FF00;
+            box-shadow: 0 0 5px rgba(0,255,0,0.5);
+            z-index: 1000;
+        }
+        .status-indicator.offline {
+            background: #FF0000;
+            box-shadow: 0 0 5px rgba(255,0,0,0.5);
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .header {
+                padding: 5px 10px;
+            }
+            .channel-name {
+                font-size: 16px;
+            }
+            .current-time {
+                font-size: 20px;
+            }
+            .prayer-time {
+                padding: 8px 10px;
+            }
+            .prayer-name {
+                font-size: 14px;
+            }
+            .prayer-time-value {
+                font-size: 18px;
+            }
+            .scroll-content {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection status indicator -->
+    <div class="status-indicator" id="statusIndicator"></div>
+
+    <!-- Slideshow container -->
+    <div class="slideshow-container" id="slideshowContainer"></div>
+
+    <!-- Header Section -->
+    <div class="header" id="header">
+        <div class="date-section">
+            <div class="date-gregorian" id="dayName">Selasa</div>
+            <div class="date-hijri" id="gregorianDate">06 Mei 2025 M</div>
+            <div class="date-hijri" id="hijriDate">07 Zulkaedah 1446 H</div>
+        </div>
+        <div class="logo-section">
+            <div class="logo" id="logo">TV</div>
+            <div class="channel-info">
+                <div class="channel-name" id="channelName">TV JAM SOLAT</div>
+                <div class="channel-details">
+                    <span id="addressLine1">No 9, 1411, Kompleks Perniagaan Utama Alor 31</span><br>
+                    <span id="addressLine2">01254111355 TV.SOLAT.COM</span>
+                </div>
+            </div>
+        </div>
+        <div class="time-section">
+            <div class="current-time" id="currentTime">09:02</div>
+            <div class="am-pm" id="amPm">AM</div>
+        </div>
+    </div>
+
+    <!-- Center Section - Mosque -->
+    <div class="center-section" id="centerSection">
+        <div class="mosque-container">
+            <div class="mosque" id="mosque"></div>
+            <div class="water-reflection" id="waterReflection"></div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="footer" id="footer">
+        <div class="prayer-times">
+            <div class="prayer-time">
+                <div class="prayer-name">Imsak</div>
+                <div class="prayer-time-value" id="imsak">05:36</div>
+            </div>
+            <div class="prayer-time">
+                <div class="prayer-name">Subuh</div>
+                <div class="prayer-time-value" id="subuh">05:46</div>
+            </div>
+            <div class="prayer-time">
+                <div class="prayer-name">Syuruk</div>
+                <div class="prayer-time-value" id="syuruk">06:57</div>
+            </div>
+            <div class="prayer-time">
+                <div class="prayer-name">Zohor</div>
+                <div class="prayer-time-value" id="zohor">01:10</div>
+            </div>
+            <div class="prayer-time">
+                <div class="prayer-name">Asar</div>
+                <div class="prayer-time-value" id="asar">04:29</div>
+            </div>
+            <div class="prayer-time">
+                <div class="prayer-name">Maghrib</div>
+                <div class="prayer-time-value" id="maghrib">07:20</div>
+            </div>
+            <div class="prayer-time">
+                <div class="prayer-name">Isyak</div>
+                <div class="prayer-time-value" id="isyak">08:28</div>
+            </div>
+        </div>
+        <div class="scrolling-text">
+            <div class="scroll-content" id="scrollText">
+                Amalan-amalan yang paling disukai Allah ialah beristiqamah walaupun sedikit.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let isServerConnected = false;
+        let slideshowImages = [];
+        let currentSlideIndex = 0;
+        let slideshowInterval;
+
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+
+            document.getElementById('currentTime').textContent =
+                `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            document.getElementById('amPm').textContent = ampm;
+        }
+
+        // Update dates (Gregorian and Hijri)
+        function updateDates() {
+            const now = new Date();
+            const dayNames = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+            const monthNames = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
+                              'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+
+            const dayName = dayNames[now.getDay()];
+            const date = now.getDate();
+            const month = monthNames[now.getMonth()];
+            const year = now.getFullYear();
+
+            document.getElementById('dayName').textContent = dayName;
+            document.getElementById('gregorianDate').textContent = `${date.toString().padStart(2, '0')} ${month} ${year} M`;
+
+            // Simple Hijri calculation (approximate)
+            const hijriYear = year - 579;
+            document.getElementById('hijriDate').textContent = `${date.toString().padStart(2, '0')} Zulkaedah ${hijriYear} H`;
+        }
+
+        // Fetch prayer times from server
+        async function fetchPrayerTimes() {
+            try {
+                const response = await fetch('/api/prayer-times');
+                if (!response.ok) throw new Error('Server response not ok');
+
+                const prayerTimes = await response.json();
+                updatePrayerTimesDisplay(prayerTimes);
+                updateConnectionStatus(true);
+
+                console.log('Prayer times updated:', prayerTimes);
+            } catch (error) {
+                console.error('Error fetching prayer times:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Update prayer times display
+        function updatePrayerTimesDisplay(times) {
+            document.getElementById('imsak').textContent = times.imsak || '05:36';
+            document.getElementById('subuh').textContent = times.subuh || '05:46';
+            document.getElementById('syuruk').textContent = times.syuruk || '06:57';
+            document.getElementById('zohor').textContent = times.zohor || '13:10';
+            document.getElementById('asar').textContent = times.asar || '16:29';
+            document.getElementById('maghrib').textContent = times.maghrib || '19:20';
+            document.getElementById('isyak').textContent = times.isyak || '20:28';
+        }
+
+        // Fetch announcements from server
+        async function fetchAnnouncements() {
+            try {
+                const response = await fetch('/api/announcements');
+                if (!response.ok) throw new Error('Server response not ok');
+
+                const data = await response.json();
+                if (data.announcements && data.announcements.length > 0) {
+                    // Use the first announcement or cycle through them
+                    const announcement = data.announcements[0];
+                    document.getElementById('scrollText').textContent = announcement;
+                }
+                updateConnectionStatus(true);
+            } catch (error) {
+                console.error('Error fetching announcements:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Fetch display settings from server
+        async function fetchDisplaySettings() {
+            try {
+                const response = await fetch('/api/display-settings');
+                if (!response.ok) throw new Error('Server response not ok');
+                
+                const settings = await response.json();
+                applyDisplaySettings(settings);
+                updateConnectionStatus(true);
+                
+                console.log('Display settings updated:', settings);
+            } catch (error) {
+                console.error('Error fetching display settings:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Apply display settings to UI
+        function applyDisplaySettings(settings) {
+            // Apply header settings
+            if (settings.header) {
+                const header = document.getElementById('header');
+                const logo = document.getElementById('logo');
+                const channelName = document.getElementById('channelName');
+                const addressLine1 = document.getElementById('addressLine1');
+                const addressLine2 = document.getElementById('addressLine2');
+                
+                header.style.background = `linear-gradient(135deg, ${settings.header.headerBgColor}, ${darkenColor(settings.header.headerBgColor, 20)})`;
+                logo.textContent = settings.header.logoText || 'TV';
+                channelName.textContent = settings.header.channelName || 'TV JAM SOLAT';
+                addressLine1.textContent = settings.header.addressLine1 || 'No 9, 1411, Kompleks Perniagaan Utama Alor 31';
+                addressLine2.textContent = settings.header.addressLine2 || '01254111355 TV.SOLAT.COM';
+            }
+            
+            // Apply background settings
+            if (settings.background) {
+                const centerSection = document.getElementById('centerSection');
+                const waterReflection = document.getElementById('waterReflection');
+                const mosque = document.getElementById('mosque');
+                
+                switch(settings.background.type) {
+                    case 'image':
+                        centerSection.style.background = `url(${settings.background.imageUrl}) center/cover no-repeat`;
+                        mosque.style.display = 'none';
+                        waterReflection.style.display = 'none';
+                        break;
+                    case 'color':
+                        centerSection.style.background = settings.background.color;
+                        mosque.style.display = 'block';
+                        waterReflection.style.display = 'block';
+                        waterReflection.style.background = `linear-gradient(to bottom, rgba(75,0,130,0.3), rgba(75,0,130,0.1)`;
+                        break;
+                    case 'gradient':
+                        centerSection.style.background = `linear-gradient(to bottom, ${settings.background.gradientColor1}, ${settings.background.gradientColor2})`;
+                        mosque.style.display = 'block';
+                        waterReflection.style.display = 'block';
+                        waterReflection.style.background = `linear-gradient(to bottom, rgba(75,0,130,0.3), rgba(75,0,130,0.1)`;
+                        break;
+                    default: // mosque
+                        centerSection.style.background = `linear-gradient(to bottom, #87CEEB, #4682B4)`;
+                        mosque.style.display = 'block';
+                        waterReflection.style.display = 'block';
+                        waterReflection.style.background = `linear-gradient(to bottom, rgba(75,0,130,0.3), rgba(75,0,130,0.1)`;
+                        break;
+                }
+            }
+            
+            // Apply footer settings
+            if (settings.footer) {
+                const footer = document.getElementById('footer');
+                footer.style.background = `linear-gradient(135deg, ${settings.footer.footerBgColor}, ${darkenColor(settings.footer.footerBgColor, 20)})`;
+            }
+            
+            // Apply slideshow settings
+            if (settings.slideshow) {
+                const slideshowContainer = document.getElementById('slideshowContainer');
+                
+                // Clear existing slides
+                slideshowContainer.innerHTML = '';
+                
+                if (settings.slideshow.enabled && settings.slideshow.imageUrls && settings.slideshow.imageUrls.length > 0) {
+                    slideshowImages = settings.slideshow.imageUrls;
+                    
+                    // Create image elements
+                    slideshowImages.forEach((url, index) => {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.classList.add('slideshow-image');
+                        if (index === 0) img.classList.add('active');
+                        slideshowContainer.appendChild(img);
+                    });
+                    
+                    // Start slideshow
+                    startSlideshow(settings.slideshow.duration || 5);
+                } else {
+                    clearInterval(slideshowInterval);
+                }
+            }
+        }
+
+        // Helper to darken a color
+        function darkenColor(hex, percent) {
+            // Remove # if present
+            hex = hex.replace('#', '');
+            
+            // Parse r, g, b values
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            // Darken each component
+            const newR = Math.max(0, r - (r * percent / 100));
+            const newG = Math.max(0, g - (g * percent / 100));
+            const newB = Math.max(0, b - (b * percent / 100));
+            
+            // Convert back to hex
+            return `#${Math.round(newR).toString(16).padStart(2, '0')}${Math.round(newG).toString(16).padStart(2, '0')}${Math.round(newB).toString(16).padStart(2, '0')}`;
+        }
+
+        // Start slideshow
+        function startSlideshow(duration) {
+            clearInterval(slideshowInterval);
+            
+            slideshowInterval = setInterval(() => {
+                const images = document.querySelectorAll('.slideshow-image');
+                if (images.length === 0) return;
+                
+                // Remove active class from current image
+                images.forEach(img => img.classList.remove('active'));
+                
+                // Move to next image
+                currentSlideIndex = (currentSlideIndex + 1) % images.length;
+                
+                // Add active class to new image
+                images[currentSlideIndex].classList.add('active');
+            }, duration * 1000);
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('statusIndicator');
+            if (connected) {
+                indicator.classList.remove('offline');
+                isServerConnected = true;
+            } else {
+                indicator.classList.add('offline');
+                isServerConnected = false;
+            }
+        }
+
+        // Customizable scroll speed
+        function setScrollSpeed(duration) {
+            const scrollElement = document.querySelector('.scroll-content');
+            scrollElement.style.animationDuration = duration + 's';
+        }
+
+        // Initialize the application
+        function initializeApp() {
+            // Update time immediately and then every second
+            updateTime();
+            setInterval(updateTime, 1000);
+
+            // Update dates immediately and then every hour
+            updateDates();
+            setInterval(updateDates, 3600000); // Every hour
+
+            // Fetch prayer times immediately and then every 30 minutes
+            fetchPrayerTimes();
+            setInterval(fetchPrayerTimes, 1800000); // Every 30 minutes
+
+            // Fetch announcements immediately and then every 5 minutes
+            fetchAnnouncements();
+            setInterval(fetchAnnouncements, 300000); // Every 5 minutes
+
+            // Fetch display settings immediately and then every 15 minutes
+            fetchDisplaySettings();
+            setInterval(fetchDisplaySettings, 900000); // Every 15 minutes
+
+            // Set default scroll speed
+            setScrollSpeed(15);
+
+            console.log('TV JAM SOLAT initialized');
+        }
+
+        // Start the application when page loads
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // Handle offline/online events
+        window.addEventListener('online', () => {
+            console.log('Connection restored');
+            fetchPrayerTimes();
+            fetchAnnouncements();
+            fetchDisplaySettings();
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('Connection lost');
+            updateConnectionStatus(false);
+        });
+    </script>
+</body>
+</html>
